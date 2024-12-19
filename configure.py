@@ -30,8 +30,8 @@ CROSS_LD = f"{CROSS}ld"
 CROSS_STRIP = f"{CROSS}strip"
 CROSS_OBJCOPY = f"{CROSS}objcopy"
 
-CC_DIR = "tools/build"
-GAME_CC_CMD = f"tools/build/gcc -nostdinc -mips3 -O2 -G 0 -I include -c -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
+CC_DIR = "tools/cc"
+GAME_CC_CMD = f"tools/cc/gcc -nostdinc -mips3 -O2 -G 0 -I include -c -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
 
 def clean():
     if os.path.exists(".splache"):
