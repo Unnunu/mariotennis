@@ -27,7 +27,11 @@ COMMON_INCLUDES = "-I include"
 CROSS = "mips-linux-gnu-"
 CROSS_AS = f"{CROSS}as"
 CROSS_LD = f"{CROSS}ld"
+CROSS_STRIP = f"{CROSS}strip"
 CROSS_OBJCOPY = f"{CROSS}objcopy"
+
+CC_DIR = "tools/build"
+GAME_CC_CMD = f"tools/build/gcc -nostdinc -mips3 -O2 -G 0 -I include -c -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
 
 def clean():
     if os.path.exists(".splache"):
@@ -74,6 +78,12 @@ def create_build_script(linker_entries: List[LinkerEntry]):
         "bin",
         description="bin $in",
         command=f"{CROSS_LD} -r -b binary $in -o $out",
+    )
+
+    ninja.rule(
+        "cc",
+        description="cc $in",
+        command=f"COMPILER_PATH={CC_DIR} {GAME_CC_CMD}",
     )
 
     ninja.rule(

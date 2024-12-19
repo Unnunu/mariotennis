@@ -75,7 +75,7 @@ segments:
     size: 0x2AE10
     dir: ovl_main
     subsegments:
-      - [0x1350, asm]
+      - [0x1350, c]
       - [0x20B0, asm]
       - [0x2630, asm]
       - [0x2D10, asm]
