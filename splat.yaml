@@ -1,14 +1,13 @@
 name: Mariotennis (North America)
-sha1: 999047f07cec931ffbdcc7b33b8502ef602807ee
+sha1: af39664092094a18c33f4323064b201a8201ec35
 options:
   basename: mariotennis
-  target_path: baserom.us.z64
+  target_path: build/baserom_dec.z64
   elf_path: build/mariotennis.elf
   base_path: .
   platform: n64
   compiler: KMC
 
-  # asm_path: asm
   # src_path: src
   # build_path: build
   # create_asm_dependencies: True
@@ -35,6 +34,8 @@ options:
 
   extensions_path: tools/splat_ext
 
+  hasm_in_src_path: True
+
   # string_encoding: ASCII
   # data_string_encoding: ASCII
   rodata_string_guesser_level: 2
@@ -44,7 +45,7 @@ segments:
     type: header
     start: 0x0
 
-  - name: boot
+  - name: bootbin
     type: bin
     start: 0x40
 
@@ -53,7 +54,7 @@ segments:
     start: 0x1000
     vram: 0x80300000
     subsegments:
-      - [0x1000, hasm]
+      - [0x1000, asm, entry]
 
   - name: boot_code
     type: code
@@ -68,7 +69,133 @@ segments:
       - [0x12D0, hasm, boot4]
 
   - name: main
+    type: code
+    start: 0x1350
+    vram: 0x80031000
+    size: 0x2AE10
+    dir: ovl_main
+    subsegments:
+      - [0x1350, asm]
+      - [0x20B0, asm]
+      - [0x2630, asm]
+      - [0x2D10, asm]
+      - [0x2EF0, asm]
+      - [0x3010, asm]
+      - [0x3070, asm]
+      - [0x31F0, asm]
+      - [0x32B0, asm]
+      - [0x32D0, asm]
+      - [0x32F0, asm]
+      - [0x34B0, asm]
+      - [0x5980, asm]
+      - [0x6640, asm]
+      - [0x6940, asm]
+      - [0x8010, asm]
+      - [0x8270, asm]
+      - [0x8660, asm]
+      - [0x98E0, asm]
+      - [0xA6C0, asm]
+      - [0xA980, asm]
+      - [0xABD0, asm]
+      - [0xAC60, asm]
+      - [0xACD0, asm]
+      - [0xAF60, asm]
+      - [0xB160, asm]
+      - [0xC460, asm]
+      - [0xD400, asm]
+      - [0xDD50, asm]
+      - [0x111F0, asm]
+      - [0x11270, asm]
+      - [0x11A50, asm]
+      - [0x11AD0, asm]
+      - [0x11BC0, asm]
+      - [0x125A0, asm]
+      - [0x129C0, asm]
+      - [0x12A60, asm]
+      - [0x12BE0, asm]
+      - [0x12FA0, asm]
+      - [0x13090, asm]
+      - [0x131D0, asm]
+      - [0x13270, asm]
+      - [0x132F0, asm]
+      - [0x13570, asm]
+      - [0x13880, asm]
+      - [0x14680, asm]
+      - [0x14900, asm]
+      - [0x14C80, asm]
+      - [0x15040, asm]
+      - [0x15070, asm]
+      - [0x153F0, asm]
+      - [0x15530, asm]
+      - [0x155E0, asm]
+      - [0x15600, asm]
+      - [0x156D0, asm]
+      - [0x156F0, asm]
+      - [0x15740, asm]
+      - [0x157F0, asm]
+      - [0x158E0, asm]
+      - [0x15A90, asm]
+      - [0x15AB0, asm]
+      - [0x15AD0, asm]
+      - [0x15BA0, asm]
+      - [0x15C60, asm]
+      - [0x15CA0, asm]
+      - [0x15CF0, asm]
+      - [0x15D80, asm]
+      - [0x15EB0, asm]
+      - [0x161D0, asm]
+      - [0x16220, asm]
+      - [0x16260, asm]
+      - [0x162A0, asm]
+      - [0x165E0, asm]
+      - [0x16640, asm]
+      - [0x16690, asm]
+      - [0x16800, asm]
+      - [0x168D0, asm]
+      - [0x16920, asm]
+      - [0x16970, asm]
+      - [0x16C80, asm]
+      - [0x16CF0, asm]
+      - [0x16D50, asm]
+      - [0x16DB0, asm]
+      - [0x16E30, asm]
+      - [0x16EB0, asm]
+      - [0x16FB0, asm]
+      - [0x17070, asm]
+      - [0x170D0, asm]
+      - [0x17130, asm]
+      - [0x17210, asm]
+      - [0x17270, asm]
+      - [0x17320, asm]
+      - [0x176B0, asm]
+      - [0x17720, asm]
+      - [0x17910, asm]
+      - [0x17B80, asm]
+      - [0x17BA0, asm]
+      - [0x17F40, asm]
+      - [0x18510, asm]
+      - [0x185A0, asm]
+      - [0x18800, asm]
+      - [0x18970, asm]
+      - [0x18990, asm]
+      - [0x189A0, asm]
+      - [0x189B0, asm]
+      - [0x189C0, asm]
+      - [0x189D0, asm]
+      - [0x18A60, asm]
+      - [0x18AB0, asm]
+      - [0x18BA0, asm]
+      - [0x18C00, asm]
+      - [0x18D10, asm]
+      - [0x18D20, asm]
+      - [0x19000, asm]
+      - [0x19210, asm]
+      - [0x19CA0, asm]
+      - [0x19DD0, data]
+      - [0x2BB80, rodata]
+  - name: unk
     type: bin
-    start: 0x1340
+    start: 0x2C160
+    vram: 0x803011C60
 
-  - [0x1000000]
+  - [0x1001AAA0]

@@ -1,7 +1,11 @@
 #! /usr/bin/env python3
 
+import shutil
+import argparse
+import os
 from pathlib import Path
 from typing import Dict, List, Set, Union
+import subprocess
 
 import ninja_syntax
 import splat
@@ -24,6 +28,13 @@ CROSS = "mips-linux-gnu-"
 CROSS_AS = f"{CROSS}as"
 CROSS_LD = f"{CROSS}ld"
 CROSS_OBJCOPY = f"{CROSS}objcopy"
+
+def clean():
+    if os.path.exists(".splache"):
+        os.remove(".splache")
+    shutil.rmtree("asm", ignore_errors=True)
+    shutil.rmtree("assets", ignore_errors=True)
+    shutil.rmtree("build", ignore_errors=True)
 
 def create_build_script(linker_entries: List[LinkerEntry]):
     built_objects: Set[Path] = set()
@@ -128,6 +139,20 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Configure the project")
+    parser.add_argument(
+        "-c",
+        "--clean",
+        help="Clean extraction and build artifacts",
+        action="store_true",
+    )
+    args = parser.parse_args()
+
+    if args.clean:
+        clean()
+
+    subprocess.run(["tools/compression.py", "d", str(ROOT / "baserom.z64"), str(ROOT / "build/baserom_dec.z64")])
+
     split.main([YAML_FILE], modes="all", verbose=False)
 
     linker_entries = split.linker_writer.entries
