@@ -76,7 +76,7 @@ segments:
     bss_size: 0xAFF0
     subsegments:
       - [0x1350, c]
-      - [0x20B0, asm]
+      - [0x20B0, c]
       - [0x2630, asm]
       - [0x2D10, asm]
       - [0x2EF0, asm]
@@ -101,6 +101,7 @@ segments:
       - [0xACD0, asm] #c, ../../ultralib/src/os/startthread]
       - [0xADC0, asm]
       - [0xAF60, asm]
+      - [0xB090, asm] # hasm, ../../ultralib/src/os/invaldcache]
       - [0xB160, asm]
       - [0xC460, asm]
       - [0xD400, asm]
