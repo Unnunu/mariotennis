@@ -22,7 +22,7 @@ ELF_PATH = f"build/{BASENAME}.elf"
 Z64_PATH = f"build/{BASENAME}.z64"
 OK_PATH = f"build/{BASENAME}.ok"
 
-COMMON_INCLUDES = "-I include"
+COMMON_INCLUDES = "-I include -I ultralib/include "
 
 CROSS = "mips-linux-gnu-"
 CROSS_AS = f"{CROSS}as"
@@ -31,7 +31,10 @@ CROSS_STRIP = f"{CROSS}strip"
 CROSS_OBJCOPY = f"{CROSS}objcopy"
 
 CC_DIR = "tools/cc"
-GAME_CC_CMD = f"tools/cc/gcc -nostdinc -mips2 -O2 -g0 -G 0 -I include -I ultralib/include -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -c -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
+CC = f"{CC_DIR}/gcc"
+AS = f"{CC_DIR}/gcc -x assembler-with-cpp"
+CFLAGS = "-nostdinc -mips2 -O3 -g0 -G0 -c"
+GAME_CC_CMD = f"{CC} {CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
 
 def clean():
     if os.path.exists(".splache"):
@@ -72,6 +75,12 @@ def create_build_script(linker_entries: List[LinkerEntry]):
         "as",
         description="as $in",
         command=f"cpp {COMMON_INCLUDES} $in -o - | {CROSS_AS} -G0 {COMMON_INCLUDES} -EB -mtune=vr4300 -march=vr4300 -o $out",
+    )
+
+    ninja.rule(
+        "as_libultra",
+        description="as $in",
+        command=f"COMPILER_PATH={CC_DIR} {AS} -c -G 0 -D_LANGUAGE_ASSEMBLY -DBUILD_VERSION=VERSION_K -D_MIPS_SIM=1 -P -mips2 {COMMON_INCLUDES} -o $out $in",
     )
 
     ninja.rule(
@@ -118,7 +127,10 @@ def create_build_script(linker_entries: List[LinkerEntry]):
         elif isinstance(seg, splat.segtypes.common.asm.CommonSegAsm) or isinstance(
             seg, splat.segtypes.common.data.CommonSegData
         ):
-            build(entry.object_path, entry.src_paths, "as")
+            if "ultralib" in str(entry.src_paths[0]):
+                build(entry.object_path, entry.src_paths, "as_libultra")
+            else:
+                build(entry.object_path, entry.src_paths, "as")
         elif isinstance(seg, splat.segtypes.common.c.CommonSegC):
             build(entry.object_path, entry.src_paths, "cc", variables={"flags": "-O2"})
         elif isinstance(seg, splat.segtypes.common.bin.CommonSegBin):
