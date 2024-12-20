@@ -31,7 +31,7 @@ CROSS_STRIP = f"{CROSS}strip"
 CROSS_OBJCOPY = f"{CROSS}objcopy"
 
 CC_DIR = "tools/cc"
-GAME_CC_CMD = f"tools/cc/gcc -nostdinc -mips3 -O2 -G 0 -I include -c -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
+GAME_CC_CMD = f"tools/cc/gcc -nostdinc -mips2 -O2 -g0 -G 0 -I include -I ultralib/include -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -c -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
 
 def clean():
     if os.path.exists(".splache"):

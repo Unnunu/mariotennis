@@ -1,2 +1,27 @@
 boot_main = 0x80300050;
 
+osGetCount = 0x80032C74;
+osRecvMesg = 0x80032DE0;
+osSendMesg = 0x80032EA0;
+__osRestoreInt = 0x80032F60;
+__osDisableInt = 0x80032F80;
+osStartThread = 0x8003A980;
+__osEnqueueAndYield = 0x80041F5C;
+__osEnqueueThread = 0x80042064;
+__osPopThread = 0x800420AC;
+__osDevMgrMain = 0x80042890;
+osCreateMesgQueue = 0x80045070;
+__osSpSetStatus = 0x800452B0;
+osYieldThread = 0x80045950;
+osGetTime = 0x800459A0;
+osSetTimer = 0x80045A30;
+osUnmapTLBAll = 0x80045E80;
+guMtxF2L = 0x80046A60;
+guNormalize = 0x80046D80;
+__osSetGlobalIntMask = 0x800481C0;
+__osSpGetStatus = 0x800486B0;
+__osThreadTail = 0x8005B4F0;
+__osRunQueue = 0x8005B4F8;
+__osRunningThread = 0x8005B500;
+__osBaseCounter = 0x80066C40;
+__osCurrentTime = 0x80066C48; //size:0x8
