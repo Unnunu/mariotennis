@@ -80,7 +80,7 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     ninja.rule(
         "as_libultra",
         description="as $in",
-        command=f"COMPILER_PATH={CC_DIR} {AS} -c -G 0 -D_LANGUAGE_ASSEMBLY -DBUILD_VERSION=VERSION_K -D_MIPS_SIM=1 -P -mips2 {COMMON_INCLUDES} -o $out $in",
+        command=f"COMPILER_PATH={CC_DIR} {AS} -c -G 0 -D_LANGUAGE_ASSEMBLY -DBUILD_VERSION=VERSION_K -D_FINALROM -D_MIPS_SIM=1 -P -mips2 {COMMON_INCLUDES} -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name",
     )
 
     ninja.rule(

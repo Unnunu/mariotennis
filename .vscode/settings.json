@@ -1,6 +1,12 @@
 {
     "files.associations": {
         "type_traits": "c",
-        "guint.h": "c"
+        "guint.h": "c",
+        "cstdlib": "c",
+        "viint.h": "c",
+        "macros.h": "c",
+        "piint.h": "c",
+        "os_version.h": "c",
+        "os_internal.h": "c"
     }
 }
