@@ -86,6 +86,7 @@ segments:
       - [0x31F0, asm] # sendmesg
       - [0x32B0, asm] # interrupt
       - [0x32F0, asm]
+      - [0x36B0, asm]
       - [0x3B10, asm]
       - [0x5980, asm]
       - [0x6640, asm]
