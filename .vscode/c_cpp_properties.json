@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
-            "defines": [ "_LANGUAGE_C" ],
+            "defines": [ "_LANGUAGE_C", "BUILD_VERSION=VERSION_K" ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",

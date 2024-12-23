@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Sequence,
     Match,
     NoReturn,
     Optional,
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     try:
         import argcomplete
     except ModuleNotFoundError:
-        argcomplete = None
+        argcomplete = None  # type: ignore
 
     parser = argparse.ArgumentParser(
         description="Diff MIPS, PPC, AArch64, ARM32, SH2, SH4, or m68k assembly."
@@ -383,6 +384,13 @@ if __name__ == "__main__":
         help="""Compress streaks of lines with same instructions (but possibly
         different regalloc), leaving N lines of context around other parts.""",
     )
+    parser.add_argument(
+        "-d",
+        "--diff-function-symbols",
+        dest="diff_function_symbols",
+        action="store_true",
+        help="Include and diff function symbols.",
+    )
 
     # Project-specific flags, e.g. different versions/make arguments.
     add_custom_arguments_fn = getattr(diff_settings, "add_custom_arguments", None)
@@ -483,6 +491,7 @@ class Config:
     ignore_addr_diffs: bool
     algorithm: str
     reg_categories: Dict[str, int]
+    diff_function_symbols: bool
 
     # Score options
     score_stack_differences = True
@@ -555,7 +564,8 @@ def create_config(args: argparse.Namespace, project: ProjectSettings) -> Config:
         diff_obj=args.diff_obj,
         file=args.file,
         make=args.make,
-        source_old_binutils=args.source_old_binutils,
+        source_old_binutils=args.source_old_binutils
+        or "llvm-" in project.objdump_executable,
         diff_section=args.diff_section,
         inlines=args.inlines,
         max_function_size_lines=args.max_lines,
@@ -577,6 +587,7 @@ def create_config(args: argparse.Namespace, project: ProjectSettings) -> Config:
         ignore_addr_diffs=args.ignore_addr_diffs,
         algorithm=args.algorithm,
         reg_categories=project.reg_categories,
+        diff_function_symbols=args.diff_function_symbols,
     )
 
 
@@ -908,7 +919,7 @@ class HtmlFormatter(Formatter):
 
 
 @dataclass
-class JsonFormatter(Formatter):
+class PythonFormatter(Formatter):
     arch_str: str
 
     def apply_format(self, chunk: str, f: Format) -> str:
@@ -916,6 +927,10 @@ class JsonFormatter(Formatter):
         return NotImplemented
 
     def table(self, data: TableData) -> str:
+        # This method is unused by this formatter
+        return NotImplemented
+
+    def raw(self, data: TableData) -> Dict[str, Any]:
         def serialize_format(s: str, f: Format) -> Dict[str, Any]:
             if f == BasicFormat.NONE:
                 return {"text": s}
@@ -977,6 +992,13 @@ class JsonFormatter(Formatter):
                     output_row[column_name] = column
             output_rows.append(output_row)
         output["rows"] = output_rows
+        return output
+
+
+@dataclass
+class JsonFormatter(PythonFormatter):
+    def table(self, data: TableData) -> str:
+        output = super().raw(data)
         return json.dumps(output)
 
 
@@ -1104,8 +1126,9 @@ def run_make_capture_output(
 
 def restrict_to_function(dump: str, fn_name: str) -> str:
     try:
-        ind = dump.index("\n", dump.index(f"<{fn_name}>:"))
-        return dump[ind + 1 :]
+        # Find the start of the line that contains "<fn_name>:"
+        ind = dump.rfind("\n", 0, dump.index(f"<{fn_name}>:")) + 1
+        return dump[ind:]
     except ValueError:
         return ""
 
@@ -1172,7 +1195,7 @@ def preprocess_objdump_out(
     This format is suitable for saving to disk with `--write-asm`.
 
     - Optionally filter the output to a single function (`restrict`)
-    - Otherwise, strip objdump header (7 lines)
+    - Otherwise, strip objdump header (6 lines)
     - Prepend .data references ("DATAREF" lines) when working with object files
     """
     out = objdump_out
@@ -1180,7 +1203,7 @@ def preprocess_objdump_out(
     if restrict is not None:
         out = restrict_to_function(out, restrict)
     else:
-        for i in range(7):
+        for i in range(6):
             out = out[out.find("\n") + 1 :]
         out = out.rstrip("\n")
 
@@ -1190,7 +1213,8 @@ def preprocess_objdump_out(
             + out
         )
 
-    return out
+    processor = config.arch.proc(config)
+    return processor.preprocess_objdump(out)
 
 
 def search_build_objects(objname: str, project: ProjectSettings) -> Optional[str]:
@@ -1484,9 +1508,12 @@ def dump_elf(
     else:
         disassemble_flag = "-d"
 
-    flags2 = [
-        f"--disassemble={diff_elf_symbol}",
-    ]
+    if "llvm-" in project.objdump_executable:
+        flags2 = ["--disassemble", f"--disassemble-symbols={diff_elf_symbol}"]
+    else:
+        flags2 = [
+            f"--disassemble={diff_elf_symbol}",
+        ]
 
     objdump_flags = [disassemble_flag, "-rz", "-j", config.diff_section]
     return (
@@ -1575,17 +1602,18 @@ def dump_binary(
     )
 
 
-# Example: "ldr r4, [pc, #56]    ; (4c <AddCoins+0x4c>)"
-ARM32_LOAD_POOL_PATTERN = r"(ldr\s+r([0-9]|1[0-3]),\s+\[pc,.*;\s*)(\([a-fA-F0-9]+.*\))"
-
-
 # The base class is a no-op.
 class AsmProcessor:
     def __init__(self, config: Config) -> None:
         self.config = config
 
+    # Called during run_objdump() for arch-specific normalization. Runs before
+    # diff-processing, i.e. process().
+    def preprocess_objdump(self, objdump: str) -> str:
+        return objdump
+
     def pre_process(
-        self, mnemonic: str, args: str, next_row: Optional[str]
+        self, mnemonic: str, args: str, next_row: Optional[str], comment: Optional[str]
     ) -> Tuple[str, str]:
         return mnemonic, args
 
@@ -1666,7 +1694,7 @@ class AsmProcessorMIPS(AsmProcessor):
 
 class AsmProcessorPPC(AsmProcessor):
     def pre_process(
-        self, mnemonic: str, args: str, next_row: Optional[str]
+        self, mnemonic: str, args: str, next_row: Optional[str], comment: Optional[str]
     ) -> Tuple[str, str]:
         if next_row and "R_PPC_EMB_SDA21" in next_row:
             # With sda21 relocs, the linker transforms `r0` into `r2`/`r13`, and
@@ -1702,6 +1730,19 @@ class AsmProcessorPPC(AsmProcessor):
             splitArgs = args.split(",")
             splitArgs[-1] = next_row.split(".text+0x")[-1]
             args = ",".join(splitArgs)
+
+        if (
+            comment is not None
+            and (
+                next_row is None
+                or re.search(self.config.arch.re_reloc, next_row) is None
+            )
+            and mnemonic == "bl"
+        ):
+            # if the mnemonic is bl and the comment doesn't match
+            # <.text+0x...> replace the args with the contents of the comment
+            if re.search(r"<.+\+0x[0-9a-fA-F]+>", comment) is None:
+                args = comment[1:-1]
 
         return mnemonic, args
 
@@ -1754,7 +1795,111 @@ class AsmProcessorPPC(AsmProcessor):
         return mnemonic == "blr"
 
 
+# Example: "cmp r0, #0x10"
+ARM32_COMPARE_IMM_PATTERN = r"cmp\s+(r[0-9]|1[0-3]),\s+#(\w+)"
+
+# Example: "add pc, r1"
+ARM32_JUMP_TABLE_START = r"add\s+pc,\s*r"
+
+# Examples:
+#  - "44:   00060032    .word   0x00060032"
+#  - "48:   0032        .short  0x0032"
+#  - "4a:   0032        movs    r2, r6"
+#  - "9e:   00be        lsls    r6, r7, #2"
+#  - ".short  0x0032   ; 0x64"
+ARM32_JUMP_TABLE_ENTRY_PATTERN = r"(?:(\w+):\s+([0-9a-f]+)\s+)?([\w\.]+)\s+([\w,\ ]+)"
+
+# Example: "ldr r4, [pc, #56]    ; (4c <AddCoins+0x4c>)"
+ARM32_LOAD_POOL_PATTERN = r"(ldr\s+r([0-9]|1[0-3]),\s+\[pc,.*;\s*)(\([a-fA-F0-9]+.*\))"
+
+
 class AsmProcessorARM32(AsmProcessor):
+    @dataclass
+    class JumpTableEntry:
+        cur_addr: int
+        table_start_addr: int
+        value: int
+        is_word: bool
+
+    def preprocess_objdump(self, objdump: str) -> str:
+        def short_table_entry(
+            cur_addr: int, jump_table_start_addr: int, value: int
+        ) -> str:
+            branch_target = jump_table_start_addr + value + 4
+            return f"  {cur_addr:x}:	{value:04x}      	.short	0x{value:04x}  ; 0x{branch_target:x}"
+
+        new_lines = []
+        lines = objdump.splitlines()
+        for i, jump_table_entry in self._lines_iterator(lines):
+            if jump_table_entry is None:
+                new_lines.append(lines[i])
+                continue
+
+            entry = jump_table_entry
+            if entry.is_word:
+                # Split into two ".short" entries.
+                hi, lo = entry.value >> 16, entry.value & 0xFFFF
+                new_lines.append(
+                    short_table_entry(entry.cur_addr, entry.table_start_addr, lo)
+                )
+                new_lines.append(
+                    short_table_entry(entry.cur_addr + 2, entry.table_start_addr, hi)
+                )
+            else:
+                new_lines.append(
+                    short_table_entry(
+                        entry.cur_addr, entry.table_start_addr, entry.value
+                    )
+                )
+        return "\n".join(new_lines)
+
+    # An iterator for each line of assembly, returning the line index and optional
+    # metadata if the line is a jump table entry.
+    def _lines_iterator(
+        self, lines: List[str]
+    ) -> Iterator[Tuple[int, Optional[JumpTableEntry]]]:
+        jump_table_entries = 0
+        table_start_addr = 0
+        for i, line in enumerate(lines):
+            addr_match = re.match(r"^\s*([0-9a-f]+):", line)
+            addr = int(addr_match.group(1), 16) if addr_match else -1
+            entry_match = re.search(ARM32_JUMP_TABLE_ENTRY_PATTERN, line)
+            if jump_table_entries > 0 and entry_match:
+                value = (
+                    entry_match.group(4)
+                    if is_hexstring(entry_match.group(4))
+                    else entry_match.group(2)
+                )
+                table_entry = self.JumpTableEntry(
+                    cur_addr=addr,
+                    table_start_addr=table_start_addr,
+                    value=int(value, 16),
+                    is_word=entry_match.group(3) == ".word",
+                )
+                jump_table_entries -= 2 if table_entry.is_word else 1
+
+                yield i, table_entry
+                continue
+
+            # Check for jump tables.
+            if re.search(ARM32_JUMP_TABLE_START, line):
+                jump_table_entries = self._jump_table_entries_count(lines, i)
+                table_start_addr = addr
+            yield i, None
+
+    # Returns the number of entries in the jump table starting at `line_no`, or
+    # 0 if it's not a jump table.
+    def _jump_table_entries_count(self, raw_lines: List[str], line_no: int) -> int:
+        # The number of entries should be in the most recent `cmp` before the
+        # jump table.
+        for i in reversed(range(line_no)):
+            cmp_match = re.search(ARM32_COMPARE_IMM_PATTERN, raw_lines[i])
+            if cmp_match:
+                value = immediate_to_int(cmp_match.group(2))
+                if value > 0:
+                    return value + 1
+        return 0
+
     def process_reloc(self, row: str, prev: str) -> Tuple[str, Optional[str]]:
         arch = self.config.arch
         if "R_ARM_V4BX" in row:
@@ -1787,10 +1932,27 @@ class AsmProcessorARM32(AsmProcessor):
         pool_match = re.search(ARM32_LOAD_POOL_PATTERN, row)
         return pool_match.group(1) if pool_match else row
 
-    def post_process(self, lines: List["Line"]) -> None:
+    def _post_process_jump_tables(self, lines: List["Line"]) -> None:
+        raw_lines = [
+            (
+                f"{line.line_num:x}: {line.original}"
+                if line.line_num is not None
+                else line.original
+            )
+            for line in lines
+        ]
+        for i, jump_table_entry in self._lines_iterator(raw_lines):
+            if jump_table_entry is None:
+                continue
+
+            entry = jump_table_entry
+            lines[i].branch_target = entry.table_start_addr + entry.value + 4
+
+    def _post_process_data_pools(self, lines: List["Line"]) -> None:
         lines_by_line_number = {}
         for line in lines:
-            lines_by_line_number[line.line_num] = line
+            if line.line_num is not None:
+                lines_by_line_number[line.line_num] = line
         for line in lines:
             if line.data_pool_addr is None:
                 continue
@@ -1800,6 +1962,10 @@ class AsmProcessorARM32(AsmProcessor):
             value = line_original.split()[1]
             addr = "{:x}".format(line.data_pool_addr)
             line.original = line.normalized_original + f"={value} ({addr})"
+
+    def post_process(self, lines: List["Line"]) -> None:
+        self._post_process_jump_tables(lines)
+        self._post_process_data_pools(lines)
 
 
 class AsmProcessorAArch64(AsmProcessor):
@@ -1864,7 +2030,7 @@ class AsmProcessorI686(AsmProcessor):
         # Example call a2f
         # Example call *0
         # Example jmp  64
-        if mnemonic == "call" or mnemonic == "jmp":
+        if mnemonic in I686_BRANCH_INSTRUCTIONS:
             addr_imm = re.search(r"(^|(?<=\*)|(?<=\*\%cs\:))[0-9a-f]+", args)
 
         # Direct use of reloc
@@ -1958,7 +2124,7 @@ class AsmProcessorSH2(AsmProcessor):
 
 class AsmProcessorM68k(AsmProcessor):
     def pre_process(
-        self, mnemonic: str, args: str, next_row: Optional[str]
+        self, mnemonic: str, args: str, next_row: Optional[str], comment: Optional[str]
     ) -> Tuple[str, str]:
         # replace objdump's syntax of pointer accesses with the equivilant in AT&T syntax for readability
         return mnemonic, re.sub(
@@ -2287,7 +2453,7 @@ MIPSEE_SETTINGS = replace(
 )
 
 MIPSEL_4000_SETTINGS = replace(
-    MIPSEL_SETTINGS, name="mipsel:4000", arch_flags=["-m", "mips:4000"]
+    MIPSEL_SETTINGS, name="mipsel:4000", arch_flags=["-m", "mips:gs464"]
 )
 
 MIPS_ARCH_NAMES = {"mips", "mipsel", "mipsee", "mipsel:4000"}
@@ -2329,6 +2495,7 @@ AARCH64_SETTINGS = ArchSettings(
     re_large_imm=re.compile(r"-?[1-9][0-9]{2,}|-?0x[0-9a-f]{3,}"),
     re_imm=re.compile(r"(?<!sp, )#-?(0x[0-9a-fA-F]+|[0-9]+)\b"),
     re_reloc=re.compile(r"R_AARCH64_"),
+    arch_flags=["--no-show-raw-insn"],
     branch_instructions=AARCH64_BRANCH_INSTRUCTIONS,
     instructions_with_address_immediates=AARCH64_BRANCH_INSTRUCTIONS.union(
         {"bl", "adrp"}
@@ -2464,6 +2631,21 @@ ARCH_SETTINGS = [
 ]
 
 
+def immediate_to_int(immediate: str) -> int:
+    imm_match = re.match(r"#?(0x)?([0-9a-f]+)", immediate)
+    assert imm_match
+    base = 16 if imm_match.group(1) else 10
+    return int(imm_match.group(2), base)
+
+
+def is_hexstring(value: str) -> bool:
+    try:
+        int(value, 16)
+        return True
+    except ValueError:
+        return False
+
+
 def hexify_int(row: str, pat: Match[str], arch: ArchSettings) -> str:
     full = pat.group(0)
 
@@ -2568,7 +2750,25 @@ def process(dump: str, config: Config) -> List[Line]:
         if not row:
             continue
 
-        if re.match(r"^[0-9a-f]+ <.*>:$", row):
+        # Check if the currrent line has "OFFSET <SYMBOL>:"
+        function_label_match = re.match(r"^[0-9a-f]+ <(.*)>:$", row)
+
+        if function_label_match:
+            function_name = function_label_match.groups()[0] + ":"
+
+            if config.diff_function_symbols:
+                # If diffing function symbols is enabled
+                # Add the symbol to the diff output
+
+                output.append(
+                    Line(
+                        mnemonic="<label>",
+                        diff_row=function_name,
+                        original=function_name,
+                        normalized_original=function_name,
+                        scorable_line="label " + function_name,
+                    )
+                )
             continue
 
         if row.startswith("DATAREF"):
@@ -2617,7 +2817,7 @@ def process(dump: str, config: Config) -> List[Line]:
         line_num = eval_line_num(line_num_str.strip())
 
         # TODO: use --no-show-raw-insn for all arches
-        if arch.name == "i686":
+        if arch.name == "i686" or arch.name == "aarch64":
             row = "\t".join(tabs[1:])
         else:
             row = "\t".join(tabs[2:])
@@ -2648,7 +2848,7 @@ def process(dump: str, config: Config) -> List[Line]:
         args = row_parts[1].strip() if len(row_parts) >= 2 else ""
 
         next_line = lines[i] if i < len(lines) else None
-        mnemonic, args = processor.pre_process(mnemonic, args, next_line)
+        mnemonic, args = processor.pre_process(mnemonic, args, next_line, comment)
         row = mnemonic + "\t" + args.replace("\t", "  ")
 
         addr = ""
@@ -2796,6 +2996,14 @@ def field_matches_any_symbol(field: str, arch: ArchSettings) -> bool:
         return re.fullmatch((r"^@\d+$"), field) is not None
 
     if arch.name in MIPS_ARCH_NAMES:
+        if (
+            re.fullmatch(r"%(?:hi|lo|gp_rel)\((@\d+(?:\+0x[A-Fa-f0-9]+)?)\)", field)
+            is not None
+        ):
+            # Check for MWCC literal symbols that begin with "@"
+            # "%hi(@20)" or "%lo(@20)", "gp_rel(@6)", or "hi(@7 + 0x10)"
+            return True
+
         return "." in field
 
     # Example: ".text+0x34"
@@ -2818,14 +3026,14 @@ def split_off_address(line: str) -> Tuple[str, str]:
 
 def diff_sequences_difflib(
     seq1: List[str], seq2: List[str]
-) -> List[Tuple[str, int, int, int, int]]:
+) -> Sequence[Tuple[str, int, int, int, int]]:
     differ = difflib.SequenceMatcher(a=seq1, b=seq2, autojunk=False)
     return differ.get_opcodes()
 
 
 def diff_sequences(
     seq1: List[str], seq2: List[str], algorithm: str
-) -> List[Tuple[str, int, int, int, int]]:
+) -> Sequence[Tuple[str, int, int, int, int]]:
     if algorithm != "levenshtein":
         return diff_sequences_difflib(seq1, seq2)
 
@@ -3502,10 +3710,12 @@ def debounced_fs_watch(
 
         def on_modified(self, ev: object) -> None:
             if isinstance(ev, watchdog.events.FileModifiedEvent):
+                assert isinstance(ev.src_path, str)
                 self.changed(ev.src_path)
 
         def on_moved(self, ev: object) -> None:
             if isinstance(ev, watchdog.events.FileMovedEvent):
+                assert isinstance(ev.dest_path, str)
                 self.changed(ev.dest_path)
 
         def should_notify(self, path: str) -> bool:

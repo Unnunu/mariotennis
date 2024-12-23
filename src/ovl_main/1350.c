@@ -24,18 +24,20 @@ void func_80033394(void);
 void func_80031D60(void*);
 void func_80031C4C(OSThread*);
 void func_8003125C(void);
+void func_80032CC0(s8* dst, s8* src, s32 length);
 
 void func_80032BA0(void);
 
 extern s32 different_80033360[];
+extern void __osInitialize_autodetect(void);
 
 void func_80031000(s32 arg0, s32 arg1, s32 arg2) {
     D_80041804 = *(u32*)(&func_80032BA0);
     func_8003AC10();
     osInvalICache(osEepromLongWrite, 0x400);
 
-    func_80032CC0(func_80041E6C, func_800332DC, (u32)different_80033360 - (u32)func_800332DC);
-    func_80032CC0(__osEnqueueThread, func_80033360, (u32)func_80033394 - (u32)func_80033360);
+    func_80032CC0((s8*)func_80041E6C, (s8*)func_800332DC, (u32)different_80033360 - (u32)func_800332DC);
+    func_80032CC0((s8*)__osEnqueueThread, (s8*)func_80033360, (u32)func_80033394 - (u32)func_80033360);
     func_8003AC10();
     osInvalICache(func_80041E6C, (u32)different_80033360 - (u32)func_800332DC);
     osInvalICache(__osEnqueueThread, (u32)func_80033394 - (u32)func_80033360);
@@ -44,8 +46,10 @@ void func_80031000(s32 arg0, s32 arg1, s32 arg2) {
     D_80061D78 = arg2;
     bzero(D_80061F48, 8);
     D_80061F48[1] = arg0;
-    __osInitialize_common();
-    __osInitialize_autodetect();
+
+    osInitialize();
+    __osInitialize_autodetect(); // why ?
+
     osAiSetFrequency(32000);
     osCreateThread(&D_8005BE30, 1, &func_80031D60, NULL, D_80059E30 + sizeof(D_80059E30), 10);
     func_80031C4C(&D_8005BE30);
@@ -54,6 +58,10 @@ void func_80031000(s32 arg0, s32 arg1, s32 arg2) {
 extern OSThread D_80061D98;
 extern s32 D_80061D84;
 extern void func_80031EE8(void*);
+void func_80033210(s32, s32, s32);
+void func_80040F20(void);
+void func_80031420(s32, s32);
+void func_800317B4(s32);
 //INCLUDE_ASM("asm/nonmatchings/ovl_main/1350", func_80031164);
 void func_80031164(void) {
     func_8003AC10();

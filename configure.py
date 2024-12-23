@@ -33,7 +33,7 @@ CROSS_OBJCOPY = f"{CROSS}objcopy"
 CC_DIR = "tools/cc"
 CC = f"{CC_DIR}/gcc"
 AS = f"{CC_DIR}/gcc -x assembler-with-cpp"
-CFLAGS = "-nostdinc -mips2 -O3 -g0 -G0 -c"
+CFLAGS = "-nostdinc -mips2 -O3 -g0 -G0 -c -Wall"
 GAME_CC_CMD = f"{CC} {CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
 
 def clean():
