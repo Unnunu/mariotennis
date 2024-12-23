@@ -8,7 +8,7 @@ undefined_syms_auto.txt
 *.d
 *.ld
 
-__pycache__
+__pycache__/
 
 asm
 assets
