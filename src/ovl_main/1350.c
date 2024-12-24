@@ -1,5 +1,6 @@
 #include "common.h"
 #include "PRinternal/viint.h"
+#include "nusys.h"
 
 typedef struct UnkAlpha {
     /* 0x00 */ s8 unk_00[14];
@@ -18,19 +19,20 @@ extern s8 D_80059E30[0x100];
 extern s32 D_80059F54;
 
 // .bss
-extern OSMesg D_8005BE10[8];
-extern OSThread D_8005BE30;
-extern /*NUScClient*/ char D_8005BFE0[12];
-extern u8 D_8005BFEC[32];
-extern char D_8005C010[0x400]; // nuScStack
+static OSMesg D_8005BE10[8];
+static OSThread D_8005BE30;
+static NUScClient D_8005BFE0;
+static u8 D_8005BFEC[32];
+
+extern char D_8005C010[0x400]; // nuScStack, static in nusched
 extern char D_8005C410[0x400]; // nuScAudioStack
 extern char D_8005C810[0x400]; // nuScAudioStack
 extern s32 D_8005CC10[625];
 // file split to nuGfxTaskMgr
 
-static s16 taskDoneMsg;
-s16 swapBufMsg;
-extern s32 nuGfxTaskSpool;
+extern s16 taskDoneMsg;
+extern s16 swapBufMsg;
+extern u32 nuGfxTaskSpool;
 
 typedef struct RSPTask {
     /* 0x00 */ struct RSPTask* next;
@@ -41,7 +43,6 @@ typedef struct RSPTask {
 } RSPTask; // size = 0x58
 
 extern RSPTask D_80062610[10];
-
 
 extern u8 D_800663D0[0x400];
 extern u8 D_800657C0[0xC10];

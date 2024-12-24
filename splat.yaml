@@ -14,6 +14,7 @@ options:
 
   ld_script_path: mariotennis.ld
   ld_dependencies: True
+  ld_bss_contains_common: True
 
   find_file_boundaries: True
   header_encoding: ASCII
@@ -26,7 +27,7 @@ options:
   asm_jtbl_label_macro: jlabel
   asm_data_macro: dlabel
 
-  # section_order: [".text", ".data", ".rodata", ".bss"]
+  section_order: [".text", ".data", ".rodata", ".bss", ".bss", "COMMON"]
   # auto_link_sections: [".data", ".rodata", ".bss"]
 
   symbol_addrs_path:
@@ -35,7 +36,7 @@ options:
   extensions_path: tools/splat_ext
 
   hasm_in_src_path: True
-
+  
   # string_encoding: ASCII
   # data_string_encoding: ASCII
   rodata_string_guesser_level: 2

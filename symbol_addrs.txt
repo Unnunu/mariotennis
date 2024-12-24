@@ -203,6 +203,9 @@ __osIntOffTable = 0x8005BC80;
 __osIntTable = 0x8005BCA0;
 __osRcpImTable = 0x8005BCD0;
 
+taskDoneMsg = 0x8005D5E4;
+swapBufMsg = 0x8005D5E6;
+
 piThread = 0x8005F860;
 piThreadStack = 0x8005FA10;
 piEventQueue = 0x80060A10;
