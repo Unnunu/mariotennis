@@ -77,40 +77,41 @@ segments:
     subsegments:
       - [0x1350, c]
       - [0x20B0, c]
-      - [0x2630, asm]
-      - [0x2D10, asm]
+      - [0x2630, asm] #c]
+      - [0x2D10, c]
       - [0x2EF0, asm]
-      - [0x3010, asm]
-      - [0x3070, asm] # ????
-      - [0x3130, asm] # recvmesg
-      - [0x31F0, asm] # sendmesg
-      - [0x32B0, asm] # interrupt
-      - [0x32F0, asm]
-      - [0x36B0, asm]
-      - [0x3B10, asm]
-      - [0x5980, asm]
-      - [0x6640, asm]
-      - [0x6940, asm]
-      - [0x8010, asm]
-      - [0x8270, asm]
-      - [0x8660, asm]
-      - [0x98E0, asm]
-      - [0xA6C0, asm]
-      - [0xA980, asm]
-      - [0xABD0, asm]
-      - [0xAC60, asm]
+      - [0x2FD0, asm]
+      - [0x3010, c]
+      - [0x3070, c] # ????
+      - [0x3130, c] # recvmesg
+      - [0x31F0, c] # sendmesg
+      - [0x32B0, c] # interrupt
+      - [0x32F0, c]
+      - [0x36B0, c]
+      - [0x3B10, c]
+      - [0x5980, c]
+      - [0x6640, c]
+      - [0x6940, c]
+      - [0x8010, c]
+      - [0x8270, c]
+      - [0x8660, c]
+      - [0x98E0, c]
+      - [0xA6C0, c]
+      - [0xA980, c]
+      - [0xABD0, c]
+      - [0xAC60, c]
       - [0xACD0, asm] #c, ../../ultralib/src/os/startthread]
-      - [0xADC0, asm]
+      - [0xADC0, asm] #c, ../../ultralib/src/io/sptask]
       - [0xAF60, asm]
       - [0xB090, asm] # hasm, ../../ultralib/src/os/invaldcache]
-      - [0xB160, asm]
-      - [0xC460, asm]
-      - [0xD400, asm]
+      - [0xB160, c]
+      - [0xC460, c]
+      - [0xD400, c]
       - [0xDD50, asm]
 
-      - [0x111B0, asm]
-      - [0x111F0, asm]
-      - [0x11270, asm]
+      - [0x111B0, c]
+      - [0x111F0, c]
+      - [0x11270, c]
       - [0x11A50, c, ../../ultralib/src/io/conteepprobe]
       - [0x11AD0, c, ../../ultralib/src/io/conteeplongwrite]
       - [0x11BC0, c, ../../ultralib/src/io/conteeplongread]
@@ -250,6 +251,8 @@ segments:
       - [0x2C140, .rodata, ../../ultralib/src/io/visetxscale]
       - [0x2C150, .rodata, ../../ultralib/src/io/viswapcontext]
       
+      - { start: auto, type: .bss, name: 1350, vram: 0x8005BE10 }
+      - { start: auto, type: .bss, name: 1350, vram: 0x8005BE20 }
       #- { start: auto, type: .bss, name: ../../ultralib/src/io/motor, vram: 0x80061C70 }
       #- { start: auto, type: .bss, name: ../../ultralib/src/io/conteepread, vram: 0x80066C80 }
       #- { start: auto, type: .bss, name: ../../ultralib/src/io/pfsisplug, vram: 0x80066CD0 }

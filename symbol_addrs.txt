@@ -5,6 +5,14 @@ osRomBase = 0x80000308;
 osResetType = 0x8000030C;
 osAppNMIBuffer = 0x8000031C;
 
+nuScCreateScheduler = 0x80031420;
+nuGfxTaskMgrInit = 0x80031860;
+nuContMgrInit = 0x800319A0;
+
+nuScEventHandler = 0x80032304;
+nuScExecuteAudio = 0x800325A0;
+nuScExecuteGraphics = 0x800326FC;
+
 cosf = 0x80032BB0;
 osGetCount = 0x80032C74;
 osRecvMesg = 0x80032DE0;
@@ -14,9 +22,13 @@ __osDisableInt = 0x80032F80;
 __udivdi3 = 0x800330F0;
 osVirtualToPhysical = 0x80033160;
 bzero = 0x80033240;
+
+nuGfxDisplayOff = 0x8003353C;
+
 sinf = 0x800385B4;
 osStartThread = 0x8003A980;
 osSpTaskStartGo = 0x8003AA70;
+osSpTaskLoad = 0x8003AA9C;
 osWritebackDCache = 0x8003AC64;
 osInvalDCache = 0x8003AD40;
 
@@ -205,6 +217,8 @@ viEventBuf = 0x80061C28;
 viRetraceMsg = 0x80061C40; //size:0x18
 viCounterMsg = 0x80061C58; //size:0x18
 __MotorDataBuf = 0x80061C70;
+
+nuGfxTaskSpool = 0x80062608;
 
 __Dom2SpeedParam = 0x80066800; //size:0x78
 __Dom1SpeedParam = 0x80066878; //size:0x78

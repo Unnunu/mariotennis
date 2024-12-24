@@ -8,9 +8,9 @@
         ".section .text\n" \
         "    .set noat\n" \
         "    .set noreorder\n" \
-        "    .globl " #NAME ".NON_MATCHING\n" \
-        "    .type " #NAME ".NON_MATCHING, @object\n" \
-        "    " #NAME ".NON_MATCHING:\n" \
+        "    .globl " #NAME "\n" \
+        "    .type " #NAME ", @function\n" \
+        "    " #NAME ":\n" \
         "    .include \"" FOLDER "/" #NAME ".s\"\n" \
         "    .set reorder\n" \
         "    .set at\n" \

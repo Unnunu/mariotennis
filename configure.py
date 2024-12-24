@@ -33,8 +33,12 @@ CROSS_OBJCOPY = f"{CROSS}objcopy"
 CC_DIR = "tools/cc"
 CC = f"{CC_DIR}/gcc"
 AS = f"{CC_DIR}/gcc -x assembler-with-cpp"
-CFLAGS = "-nostdinc -mips2 -O3 -g0 -G0 -c -Wall"
-GAME_CC_CMD = f"{CC} {CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
+
+CFLAGS = "-nostdinc -mips2 -O2 -g0 -G0 -c -Wall"
+GAME_CC_CMD = f"{CC} {CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -DF3DEX_GBI_2 -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
+
+LIBULTRA_CFLAGS = "-nostdinc -mips2 -O3 -g0 -G0 -c"
+LIBULTRA_CC_CMD = f"{CC} {LIBULTRA_CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -DF3DEX_GBI_2 -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
 
 def clean():
     if os.path.exists(".splache"):
@@ -96,6 +100,12 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.rule(
+        "cc_libultra",
+        description="cc $in",
+        command=f"COMPILER_PATH={CC_DIR} {LIBULTRA_CC_CMD}",
+    )
+
+    ninja.rule(
         "ld",
         description="link $out",
         command=f"{CROSS_LD} -T undefined_syms.txt -T undefined_syms_auto.txt -T undefined_funcs_auto.txt -Map $mapfile -T $in -o $out",
@@ -132,7 +142,10 @@ def create_build_script(linker_entries: List[LinkerEntry]):
             else:
                 build(entry.object_path, entry.src_paths, "as")
         elif isinstance(seg, splat.segtypes.common.c.CommonSegC):
-            build(entry.object_path, entry.src_paths, "cc", variables={"flags": "-O2"})
+            if "ultralib" in str(entry.src_paths[0]):
+                build(entry.object_path, entry.src_paths, "cc_libultra")
+            else:
+                build(entry.object_path, entry.src_paths, "cc")
         elif isinstance(seg, splat.segtypes.common.bin.CommonSegBin):
             build(entry.object_path, entry.src_paths, "bin")
         else:

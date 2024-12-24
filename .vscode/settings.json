@@ -12,6 +12,7 @@
         "common.h": "c",
         "ultra64.h": "c",
         "ultratypes.h": "c",
-        "ultraerror.h": "c"
+        "ultraerror.h": "c",
+        "nusys.h": "c"
     }
 }
