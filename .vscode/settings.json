@@ -13,6 +13,7 @@
         "ultra64.h": "c",
         "ultratypes.h": "c",
         "ultraerror.h": "c",
-        "nusys.h": "c"
+        "nusys.h": "c",
+        "include_asm.h": "c"
     }
 }

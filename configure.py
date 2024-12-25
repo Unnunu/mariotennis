@@ -35,7 +35,7 @@ CC = f"{CC_DIR}/gcc"
 AS = f"{CC_DIR}/gcc -x assembler-with-cpp"
 
 CFLAGS = "-nostdinc -mips2 -O2 -g0 -G0 -c -Wall"
-GAME_CC_CMD = f"{CC} {CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -DF3DEX_GBI_2 -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
+GAME_CC_CMD = f"{CC} {CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -DF3DEX_GBI_2 -DNUSYS_MT -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
 
 LIBULTRA_CFLAGS = "-nostdinc -mips2 -O3 -g0 -G0 -c"
 LIBULTRA_CC_CMD = f"{CC} {LIBULTRA_CFLAGS} {COMMON_INCLUDES} -D_LANGUAGE_C -DBUILD_VERSION=VERSION_K -D_FINALROM -DNDEBUG -DF3DEX_GBI_2 -o $out $in && {CROSS_STRIP} $out -N dummy-symbol-name"
@@ -108,7 +108,7 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     ninja.rule(
         "ld",
         description="link $out",
-        command=f"{CROSS_LD} -T undefined_syms.txt -T undefined_syms_auto.txt -T undefined_funcs_auto.txt -Map $mapfile -T $in -o $out",
+        command=f"{CROSS_LD} -plugin tools/common-plugin.so -plugin-opt order=bss_order.txt -plugin-opt file=build/src/ovl_main/bss.o -T undefined_syms.txt -T undefined_syms_auto.txt -T undefined_funcs_auto.txt -Map $mapfile -T $in -o $out",
     )
 
     ninja.rule(

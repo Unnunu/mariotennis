@@ -4,9 +4,9 @@ INCLUDE_ASM("asm/nonmatchings/ovl_main/36B0", func_80033360);
 
 INCLUDE_ASM("asm/nonmatchings/ovl_main/36B0", func_80033394);
 
-INCLUDE_ASM("asm/nonmatchings/ovl_main/36B0", func_800333AC);
+INCLUDE_ASM("asm/nonmatchings/ovl_main/36B0", nuGfxTaskStart);
 
-INCLUDE_ASM("asm/nonmatchings/ovl_main/36B0", func_8003352C);
+INCLUDE_ASM("asm/nonmatchings/ovl_main/36B0", nuGfxDisplayOn);
 
 INCLUDE_ASM("asm/nonmatchings/ovl_main/36B0", nuGfxDisplayOff);
 

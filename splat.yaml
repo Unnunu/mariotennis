@@ -27,7 +27,7 @@ options:
   asm_jtbl_label_macro: jlabel
   asm_data_macro: dlabel
 
-  section_order: [".text", ".data", ".rodata", ".bss", ".bss", "COMMON"]
+  # section_order: [".text", ".data", ".rodata", ".bss"]
   # auto_link_sections: [".data", ".rodata", ".bss"]
 
   symbol_addrs_path:
@@ -77,9 +77,8 @@ segments:
     bss_size: 0xAFF0
     subsegments:
       - [0x1350, c]
-      - [0x20B0, c]
-      - [0x2630, asm] #c]
-      - [0x2D10, c]
+      - [0x2630, c, nusched] #c]
+      - [0x2D10, c, mt19937]
       - [0x2EF0, asm]
       - [0x2FD0, asm]
       - [0x3010, c]
@@ -98,7 +97,7 @@ segments:
       - [0x8660, c]
       - [0x98E0, c]
       - [0xA6C0, c]
-      - [0xA980, c]
+      - [0xA980, c, ../../lib/nusys/nusimgr]
       - [0xABD0, c]
       - [0xAC60, c]
       - [0xACD0, asm] #c, ../../ultralib/src/os/startthread]
@@ -219,9 +218,12 @@ segments:
       - [0x19210, c, ../../ultralib/src/io/contpfs]
       - [0x19CA0, hasm, ../../ultralib/src/libc/bcmp]
       - [0x19DB0, c, ../../ultralib/src/io/si]
+      #- [auto, c, bss]
 
       - [0x19DD0, data]
       - [0x19E80, data]
+      - [0x2A420, .data, ../../lib/nusys/nusimgr]
+      - [0x2A430, data]
       - [0x2B750, .data, ../../ultralib/src/os/exceptasm]
       - [0x2B780, data] # .data, ../../ultralib/src/io/pimgr]
       - [0x2B7B0, .data, ../../ultralib/src/io/cartrominit]
@@ -251,13 +253,6 @@ segments:
       - [0x2C100, rodata, 14900]
       - [0x2C140, .rodata, ../../ultralib/src/io/visetxscale]
       - [0x2C150, .rodata, ../../ultralib/src/io/viswapcontext]
-      
-      - { start: auto, type: .bss, name: 1350, vram: 0x8005BE10 }
-      - { start: auto, type: .bss, name: 1350, vram: 0x8005BE20 }
-      #- { start: auto, type: .bss, name: ../../ultralib/src/io/motor, vram: 0x80061C70 }
-      #- { start: auto, type: .bss, name: ../../ultralib/src/io/conteepread, vram: 0x80066C80 }
-      #- { start: auto, type: .bss, name: ../../ultralib/src/io/pfsisplug, vram: 0x80066CD0 }
-      #- { start: auto, type: .bss, name: ../../ultralib/src/io/contpfs, vram: 0x80066D00 }
   - name: unk
     type: bin
     start: 0x2C160

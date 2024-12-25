@@ -19,10 +19,10 @@ extern s8 D_80059E30[0x100];
 extern s32 D_80059F54;
 
 // .bss
-static OSMesg D_8005BE10[8];
-static OSThread D_8005BE30;
-static NUScClient D_8005BFE0;
-static u8 D_8005BFEC[32];
+static OSMesg D_8005BE10_[8];
+static OSThread D_8005BE30_;
+static NUScClient D_8005BFE0_;
+static u8 sGlobalFlags[32];
 
 extern char D_8005C010[0x400]; // nuScStack, static in nusched
 extern char D_8005C410[0x400]; // nuScAudioStack
@@ -61,17 +61,16 @@ extern s32 D_800638BC[4];
 extern s32 D_800638CC;
 extern u8 D_800638D0;
 
-extern s32 D_80061F6C;
-extern s32 D_80061D74;
-extern s32 D_80061D78;
-extern s32 D_80061D7C;
+s32 D_80061D74;
+s32 D_80061D78;
+s32 D_80061D7C;
 extern s32 D_80061D80;
+extern void (*D_80061F6C)(void);
 
 extern s32 D_80061F48[2];
 extern OSMesgQueue D_800650B0;
 extern OSMesg D_8005DD70[8];
 extern s8 D_8005EF40[];
-void func_8003A6D4(void*);
 
 extern void func_80100000(void);
 extern char D_802EC000[];
@@ -79,7 +78,7 @@ extern void func_800C8000(void);
 extern OSMesgQueue D_80061F50;
 extern Gfx* D_800648EC[];
 extern Gfx* D_800648E8;
-extern OSThread D_8005DD90;
+extern OSThread siMgrThread;
 extern void func_80031ECC(void);
 
 extern void __osEnqueueThread(OSThread** threadQueue, OSThread* thread);
@@ -128,14 +127,14 @@ void func_80031000(s32 arg0, s32 arg1, s32 arg2) {
     __osInitialize_autodetect(); // why ?
 
     osAiSetFrequency(32000);
-    osCreateThread(&D_8005BE30, 1, &func_80031D60, NULL, D_80059E30 + sizeof(D_80059E30), 10);
-    func_80031C4C(&D_8005BE30);
+    osCreateThread(&D_8005BE30_, 1, &func_80031D60, NULL, D_80059E30 + sizeof(D_80059E30), 10);
+    func_80031C4C(&D_8005BE30_);
 }
 
 void func_80031164(void) {
     func_8003AC10();
     func_80033210(0xA0100000, 0x300000, 0);
-    D_80061F6C = 0;
+    D_80061F6C = NULL;
     func_80040F20();
     nuScCreateScheduler(OS_TV_MPAL, 1);
     D_80061D7C = osGetCount();
@@ -144,10 +143,10 @@ void func_80031164(void) {
     func_8003125C();
     func_800317B4(0);
     D_80061D80 = osGetCount();
-    osSetThreadPri(&D_8005BE30, 10);
+    osSetThreadPri(&D_8005BE30_, 10);
     D_80061F48[0] = 0;
     D_80061D84 = osGetCount();
-    osSetThreadPri(&D_8005BE30, 0);
+    osSetThreadPri(&D_8005BE30_, 0);
     osCreateThread(&D_80061D98, 4, func_80031EE8, 0, D_80059A30 + sizeof(D_80059A30), 50);
     osStartThread(&D_80061D98);
 }
@@ -169,15 +168,25 @@ void func_8003125C(void) {
         );
 }
 
-
-
-//extern void* D_0[];
-extern void* D_13[];
-extern void* D_4E[];
-extern void* D_2000[];
-extern void* D_C000[];
-extern void* D_10000[];
 INCLUDE_ASM("asm/nonmatchings/ovl_main/1350", func_80031290);
+/*
+void func_80031290(void) {
+    void* s0;
+    void* a1;
+
+    s0 = 0x4E;
+    s0 = func_80037CC0(s0);
+    func_80035CC0(s0, func_80100000, func_80037D44(s0));
+    osInvalICache(func_80100000, s0 = 0x10000);
+    func_80100000();
+    func_800322B4();
+
+    func_80037DFC(s0 = 0x13, s0 = D_802EC000);
+    osInvalICache(s0, s0 = 0xC000);
+
+    func_80037DFC(0x0, func_800C8000);
+    osInvalICache(func_800C8000, 0x2000);
+}*/
 /*
 void func_80031290(void) {
     s32 temp_s0;
@@ -195,8 +204,8 @@ void func_80031290(void) {
     osInvalICache(func_800C8000, D_2000);
     func_80031AAC();
     func_802EC048();
-    osCreateMesgQueue(&D_80061F50, D_8005BE10, 8);
-    func_8003244C(D_8005BFE0, &D_80061F50, 3);
+    osCreateMesgQueue(&D_80061F50, D_8005BE10_, 8);
+    func_8003244C(D_8005BFE0_, &D_80061F50, 3);
     func_800365F0();
     func_8003698C(0);
     func_8003698C(1);
@@ -210,7 +219,6 @@ void func_80031290(void) {
 }
 */
 
-// nuScCreateScheduler
 INCLUDE_ASM("asm/nonmatchings/ovl_main/1350", nuScCreateScheduler);
 
 #ifdef NON_MATCHING
@@ -311,6 +319,8 @@ void func_80031AAC(void) {
     }
 }
 
+void nuSiMgrThread(void* arg);
+
 // nuSiMgrInit
 u8 func_80031B50(void) {
     u8 sp28;
@@ -327,8 +337,8 @@ u8 func_80031B50(void) {
         }
     }
 
-    osCreateThread(&D_8005DD90, 6, func_8003A6D4, NULL, D_8005EF40, 115);
-    osStartThread(&D_8005DD90);
+    osCreateThread(&siMgrThread, 6, nuSiMgrThread, NULL, D_8005EF40, 115);
+    osStartThread(&siMgrThread);
     return sp28;
 }
 
@@ -374,3 +384,113 @@ void func_80031C4C(OSThread* t) {
     __osRestoreInt(saveMask);
 }
 */
+
+extern OSThread D_8005BE30_;
+extern s32 D_80061D88;
+
+void func_80031164(void);
+
+#ifdef NON_MATCHING
+void func_80031D60(void) {
+    func_80031164();
+    osSetThreadPri(&D_8005BE30_, 0);
+    D_80061D88 = osGetCount();
+
+    while (TRUE) {
+        if (D_80061F6C != NULL) {
+            D_80061F6C();
+        }
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/ovl_main/1350", func_80031D60);
+#endif
+
+void func_80031DC4(void (*arg0)(void)) {
+    D_80061F6C = arg0;
+}
+
+void func_80031DD0(void) {
+}
+
+void func_80031DD8(void* arg0) {
+    while (TRUE) {
+        func_800364C4();
+        func_80031DD0();
+    }
+}
+
+extern OSThread D_80061D98;
+extern s8 D_80059A30[0x100];
+
+void func_80031E04(void) {
+    osSetThreadPri(&D_8005BE30_, 0);
+    osDestroyThread(&D_80061D98);
+    osCreateThread(&D_80061D98, 4, func_80031DD8, 0, D_80059A30 + sizeof(D_80059A30), 50);
+    osStartThread(&D_80061D98);
+    osSetThreadPri(&D_8005BE30_, 0);
+    func_80031DC4(NULL);
+}
+
+
+void func_80031E94(void) {
+    func_80041580();
+}
+
+void func_80031EB0(void) {
+    func_800415A0();
+}
+
+void func_80031ECC(void) {
+    func_80031E94();
+}
+
+void func_80031EE8(void* arg) {
+    func_80031290();
+    func_800C8000();
+}
+
+void func_80031F0C(s32 arg0) {
+    while (arg0) {
+        func_80031F40();
+        arg0--;
+    }
+}
+
+INCLUDE_ASM("asm/nonmatchings/ovl_main/1350", func_80031F40);
+
+s32 func_800321C4(u32 arg0) {
+    if (arg0 >= 256) {
+        return FALSE;   
+    } else {
+        return (sGlobalFlags[arg0 >> 3] & (0x80 >> (arg0 & 7))) != 0;
+    }
+}
+
+void func_80032200(u32 arg0) {
+    if (arg0 < 256) {
+        sGlobalFlags[arg0 >> 3] |= (0x80 >> (arg0 & 7));
+    }
+}
+
+void func_8003223C(u32 arg0) {
+    if (arg0 < 256) {
+        sGlobalFlags[arg0 >> 3] &= ((u16)~0x80 >> (arg0 & 7));
+    }
+}
+
+void func_80032278(u32 arg0) {
+    if (arg0 < 256) {
+        sGlobalFlags[arg0 >> 3] ^= (0x80 >> (arg0 & 7));
+    }
+}
+
+void func_800322B4(void) {
+    s32 i;
+
+    for (i = 0; i < 32; i++) {
+        sGlobalFlags[i] = 0;
+    }
+}
+
+static u8 filler[0x1d60]; // BSSFILL

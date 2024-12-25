@@ -9,11 +9,28 @@ nuScCreateScheduler = 0x80031420;
 nuGfxTaskMgrInit = 0x80031860;
 nuContMgrInit = 0x800319A0;
 
+
+nuScGetAudioMQ = 0x800322EC;
+nuScGetGfxMQ = 0x800322F8;
 nuScEventHandler = 0x80032304;
+nuScAddClient = 0x8003244C;
+nuScResetClientMesgType = 0x800324C0;
+nuScRemoveClient = 0x800324C8;
+nuScEventBroadcast = 0x80032538;
 nuScExecuteAudio = 0x800325A0;
 nuScExecuteGraphics = 0x800326FC;
+nuScWaitTaskReady = 0x80032910;
+nuScSetFrameBufferNum = 0x80032990;
+nuScGetFrameRate = 0x8003299C;
+nuGfxTaskEndFunc = 0x80049AF0;
+nuGfxDisplay = 0x80062600;
+nuGfxRetraceWait = 0x80040EA0;
+nuSiCallBackList = 0x8005A0D0;
 
 cosf = 0x80032BB0;
+osMapTLB = 0x80032BC0;
+osDpGetCounters = 0x80032C40;
+osDpSetStatus = 0x80032C68;
 osGetCount = 0x80032C74;
 osRecvMesg = 0x80032DE0;
 osSendMesg = 0x80032EA0;
@@ -23,7 +40,13 @@ __udivdi3 = 0x800330F0;
 osVirtualToPhysical = 0x80033160;
 bzero = 0x80033240;
 
+nuGfxTaskStart = 0x800333AC;
+nuGfxDisplayOn = 0x8003352C;
 nuGfxDisplayOff = 0x8003353C;
+nuSiMgrThread = 0x8003A6D4;
+siMgrThread = 0x8005DD90;
+nuSiSendMesg = 0x8003A630;
+nuSiMgrMesgQ = 0x80065098;
 
 sinf = 0x800385B4;
 osStartThread = 0x8003A980;
@@ -221,7 +244,9 @@ viRetraceMsg = 0x80061C40; //size:0x18
 viCounterMsg = 0x80061C58; //size:0x18
 __MotorDataBuf = 0x80061C70;
 
+nusched = 0x80061F78; // size:0x680
 nuGfxTaskSpool = 0x80062608;
+D_8005BE30_ = 0x8005BE30;
 
 __Dom2SpeedParam = 0x80066800; //size:0x78
 __Dom1SpeedParam = 0x80066878; //size:0x78
